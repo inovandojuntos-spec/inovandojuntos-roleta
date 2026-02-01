@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ruleta</title>
+  <title>Ruleta (Prueba SoundCloud móvil)</title>
 
   <style>
     :root{
@@ -30,7 +30,6 @@
       box-sizing:border-box;
     }
 
-    /* CARD NEGRO PURO */
     .card{
       width:min(640px,100%);
       background:#000;
@@ -41,13 +40,12 @@
       position:relative;
     }
 
-    /* LOGO (SIN LÍNEA DIVISORIA) */
     .logoHeader{
       display:flex;
       justify-content:center;
       align-items:center;
       padding:14px 0 12px;
-      margin:-14px -14px 0; /* sin separación abajo */
+      margin:-14px -14px 0;
       background:#000;
       border-top-left-radius:22px;
       border-top-right-radius:22px;
@@ -59,16 +57,15 @@
       height:auto;
     }
 
-    /* CONTENEDOR NEGRO, SOLO LA RULETA TIENE SU LOOK */
     .stage{
       position:relative;
       display:flex;
       align-items:center;
       justify-content:center;
       padding:14px 0 16px;
-      background:#000;     /* negro puro */
+      background:#000;
       border-radius:18px;
-      box-shadow:none;     /* sin bordes blancos */
+      box-shadow:none;
       margin-top:10px;
     }
 
@@ -89,7 +86,6 @@
       filter:drop-shadow(0 8px 16px rgba(0,0,0,.9));
     }
 
-    /* BOTÓN */
     .btnBig{
       width:100%;
       cursor:pointer;
@@ -107,7 +103,6 @@
     }
     .btnBig:active{transform:translateY(1px)}
 
-    /* RESULTADO */
     .result{
       margin-top:10px;
       padding:12px 14px;
@@ -128,15 +123,50 @@
       letter-spacing:.4px;
     }
 
-    /* SOUNDCLOUD OCULTO */
+    /* ==== SOUNDCLOUD VISIBLE PARA PRUEBA EN CELULAR ==== */
     .playerBox{
-      position:absolute;
-      left:-9999px;
-      width:1px;
-      height:1px;
+      margin-top:12px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:16px;
       overflow:hidden;
-      opacity:0;
-      pointer-events:none;
+      background:#000;
+    }
+
+    .playerRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+
+    .btnSmall{
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.18);
+      background:linear-gradient(180deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.04) 100%);
+      color:rgba(255,255,255,.92);
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:900;
+      letter-spacing:.6px;
+      text-transform:uppercase;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .btnSmall:active{ transform: translateY(1px); }
+
+    .playerHint{
+      color:rgba(255,255,255,.55);
+      font-size:12px;
+      line-height:1.2;
+    }
+
+    .scFrame{
+      width:100%;
+      height:140px;
+      border:0;
+      display:block;
+      background:#000;
     }
   </style>
 </head>
@@ -163,9 +193,15 @@
         <div class="value" id="resultText">—</div>
       </div>
 
-      <!-- SOUNDCLOUD OCULTO -->
+      <!-- SOUNDCLOUD (VISIBLE PARA PROBAR EN CELULAR) -->
       <div class="playerBox">
-        <iframe id="scFrame" allow="autoplay"></iframe>
+        <div class="playerRow">
+          <button class="btnSmall" id="btnPlay">▶ PLAY</button>
+          <div class="playerHint">
+            En celular, SoundCloud suele requerir play manual (política de autoplay).
+          </div>
+        </div>
+        <iframe id="scFrame" class="scFrame" allow="autoplay"></iframe>
       </div>
 
     </div>
@@ -173,7 +209,7 @@
 
   <script>
     // ==========
-    // CONFIG
+    // CONFIG RULETA
     // ==========
     const GROUPS = ["SENSUAL","CONFIANZA","DESEOS","CURIOSIDAD","ACERCAMIENTO"];
 
@@ -186,11 +222,33 @@
       ACERCAMIENTO:13
     };
 
-    const DEFAULT_SC_EMBED =
-      "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/soundcloud%3Atracks%3A2257955501%3Fsecret_token%3Ds-JaiHelBXnZB" +
-      "&color=%23040404&auto_play=true&visual=true";
+    // ==========
+    // SOUNDCLOUD (PRUEBA MÓVIL)
+    // ==========
+    // Nota: si el track es privado, necesita secret_token (como ya lo tienes).
+    const TRACK_URL =
+      "https://api.soundcloud.com/tracks/soundcloud%3Atracks%3A2257955501%3Fsecret_token%3Ds-JaiHelBXnZB";
 
-    document.getElementById("scFrame").src = DEFAULT_SC_EMBED;
+    const scFrame = document.getElementById("scFrame");
+
+    function scEmbed({ autoplay=false, visual=false } = {}){
+      const base = "https://w.soundcloud.com/player/?url=" + encodeURIComponent(TRACK_URL);
+      const params = [
+        "color=%23040404",
+        "auto_play=" + (autoplay ? "true" : "false"),
+        "visual=" + (visual ? "true" : "false"),
+        "show_teaser=true"
+      ].join("&");
+      return base + "&" + params;
+    }
+
+    // Carga inicial SIN autoplay (mobile-safe)
+    scFrame.src = scEmbed({ autoplay:false, visual:false });
+
+    // Botón PLAY: recarga el player con autoplay=true (tras gesto del usuario)
+    document.getElementById("btnPlay").addEventListener("click", () => {
+      scFrame.src = scEmbed({ autoplay:true, visual:false });
+    });
 
     // ==========
     // TICK SOUND (WebAudio)
@@ -278,7 +336,7 @@
       if(spinning) return;
       spinning = true;
 
-      // Activa audio con gesto del usuario
+      // Activa audio (ticks) con gesto del usuario
       ensureAudio();
 
       const start = rot;
@@ -294,7 +352,7 @@
         rot = start + (end - start) * (1 - Math.pow(1 - p, 3));
         drawWheel(rot);
 
-        // ===== Tick al cruzar límites de segmento =====
+        // Tick al cruzar límites de segmento
         const aPrev = norm(prevRot);
         const aNow  = norm(rot);
 
@@ -310,7 +368,6 @@
         if(p < 1){
           requestAnimationFrame(anim);
         } else {
-          // resultado
           const idx = Math.floor(((Math.PI*1.5 - rot) % TWO_PI + TWO_PI) / slice);
           const g = GROUPS[idx];
           const q = Math.floor(Math.random() * GROUP_COUNTS[g]) + 1;
@@ -320,8 +377,9 @@
           // acento final
           playTick(1);
 
-          // audio default (por ahora)
-          document.getElementById("scFrame").src = DEFAULT_SC_EMBED;
+          // IMPORTANTÍSIMO PARA MÓVIL:
+          // No intentes autoplay aquí. Solo deja el track cargado.
+          scFrame.src = scEmbed({ autoplay:false, visual:false });
 
           spinning = false;
         }
